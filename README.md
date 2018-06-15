@@ -7,3 +7,4 @@ The main purpose of this script:
 configuring the Fortigate to route all Internet traffic of a specific subnet through VyOS.
 VyOS will NAT all traffic with it public IP.
 
+

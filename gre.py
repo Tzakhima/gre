@@ -81,7 +81,7 @@ for key in items:
         i += 1
 
 
-print("\nPlease Choose Fortigate "+bold+"WAN"+reset+" interface For Tunneling: ")
+print("\nPlease Choose Fortigate --WAN-- interface For Tunneling: ")
 print("~"*35)
 
 # WAN section
@@ -100,7 +100,7 @@ forti_wan_ip_tun   = forti_wan_ip_split[0]
 forti_interface    = name_dict[int(wan_choice)]['name']
 
 # LAN section
-print("\nPlease Choose Fortigate "+bold+"LAN"+reset+" interface For Tunneling: ")
+print("\nPlease Choose Fortigate ==LAN== interface For Tunneling: ")
 print("~"*35)
 
 for k in name_dict:
@@ -116,7 +116,7 @@ lan_choice = input("Choose One Of The Above (The Number Inside The '[]' ): ")
 forti_lan_ip_full   = name_dict[int(lan_choice)]['ip']
 forti_lan_split     = forti_lan_ip_full.split()
 forti_lan_net       = forti_lan_split[0]
-forti_lan_mask      = forti_lan_split[1]
+forti_lan_mask      = sum([bin(int(x)).count('1') for x in forti_lan_split[1].split('.')])
 forti_lan_interface = name_dict[int(lan_choice)]['name']
 
 ########################################################################################################################
