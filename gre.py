@@ -11,6 +11,7 @@ import json
 import urllib3
 from netmiko import ConnectHandler
 import getpass
+from netaddr import *
 
 
 #disable SSL warnings
@@ -116,7 +117,9 @@ lan_choice = input("Choose One Of The Above (The Number Inside The '[]' ): ")
 forti_lan_ip_full   = name_dict[int(lan_choice)]['ip']
 forti_lan_split     = forti_lan_ip_full.split()
 forti_lan_net       = forti_lan_split[0]
-forti_lan_mask      = sum([bin(int(x)).count('1') for x in forti_lan_split[1].split('.')])
+forti_lan_mask      = str(sum([bin(int(x)).count('1') for x in forti_lan_split[1].split('.')]))
+ip_cidr             = IPNetwork(forti_lan_net+'/'+forti_lan_mask)
+forti_ip_and_cidr   = str(ip_cidr.cidr)
 forti_lan_interface = name_dict[int(lan_choice)]['name']
 
 ########################################################################################################################
@@ -180,7 +183,7 @@ except:
 payload = {"seq-num":1,
       "src":[
         {
-          "subnet":forti_lan_net+"/"+forti_lan_mask,
+          "subnet":forti_ip_and_cidr,
         }
       ],
       "srcaddr":[
@@ -269,12 +272,12 @@ config_commands = [
 'set interfaces tunnel tun0 multicast disable',
 'set interfaces tunnel tun0 remote-ip '+forti_wan_ip,
 'set nat source rule 10 outbound-interface eth0',
-'set nat source rule 10 source address '+forti_lan_net+'/'+forti_lan_mask,
+'set nat source rule 10 source address '+forti_ip_and_cidr,
 'set nat source rule 10 translation address masquerade',
 'set policy route MSS-CLAMP rule 10 protocol tcp',
 'set policy route MSS-CLAMP rule 10 set tcp-mss 1300',
 'set policy route MSS-CLAMP rule 10 tcp flags SYN',
-'set protocols static interface-route '+forti_lan_net+'/'+forti_lan_mask+' next-hop-interface tun0',
+'set protocols static interface-route '+forti_ip_and_cidr+' next-hop-interface tun0',
 'set protocols static interface-route 172.31.255.2/32 next-hop-interface tun0',
 'set interfaces ethernet eth0 policy route MSS-CLAMP',
 'commit',
