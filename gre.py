@@ -5,7 +5,6 @@ Tzakhi Malka
 Tzakhi@malnet.co.il
 '''
 
-
 import requests
 import json
 import urllib3
@@ -131,6 +130,20 @@ forti_lan_interface = name_dict[int(lan_choice)]['name']
 
 api_url = 'https://'+forti_wan_ip+':'+forti_wan_port+'/api/v2/cmdb'
 
+# Modifying LAN interface MTU and TCP-MSS
+payload = {
+      "mtu-override":"enable",
+      "mtu":1472,
+      "tcp-mss":1432}
+
+print('\nModifying LAN interface MTU and TCP-MSS\n')
+try:
+    set_lan_mtu = session.put(url = api_url+'/system/interface/'+forti_lan_interface,cookies=cookies, headers=header, json={'json': payload})
+    print (set_lan_mtu.json())
+except:
+    print('Something Went Wrong While Setting MTU And MSS On LAN Interace')
+    exit()
+
 
 # Creating System GRE-TUNEEL
 payload = {"name":"GRE-TUN",
@@ -165,7 +178,7 @@ payload = {
       "allowaccess":"ping",
       "mtu-override":"enable",
       "mtu":1472,
-      "tcp-mss":1300,
+      "tcp-mss":1432,
       "interface":"wan",
       "remote-ip":"172.31.255.1 255.255.255.255"}
 
@@ -268,14 +281,14 @@ config_commands = [
 'set interfaces tunnel tun0 address 172.31.255.1/32',
 'set interfaces tunnel tun0 encapsulation gre',
 'set interfaces tunnel tun0 local-ip '+vyos_wan_ip,
-'set interfaces tunnel tun0 mtu 1360',
+'set interfaces tunnel tun0 mtu 1472',
 'set interfaces tunnel tun0 multicast disable',
 'set interfaces tunnel tun0 remote-ip '+forti_wan_ip,
 'set nat source rule 10 outbound-interface eth0',
 'set nat source rule 10 source address '+forti_ip_and_cidr,
 'set nat source rule 10 translation address masquerade',
 'set policy route MSS-CLAMP rule 10 protocol tcp',
-'set policy route MSS-CLAMP rule 10 set tcp-mss 1300',
+'set policy route MSS-CLAMP rule 10 set tcp-mss 1432',
 'set policy route MSS-CLAMP rule 10 tcp flags SYN',
 'set protocols static interface-route '+forti_ip_and_cidr+' next-hop-interface tun0',
 'set protocols static interface-route 172.31.255.2/32 next-hop-interface tun0',
@@ -290,13 +303,11 @@ except:
     print('Fortigate Configured but VyOS not... ')
     print('Quitting...')
     exit()
-
 output = net_connect.send_config_set(config_commands)
 print(output)
 
 
 ### Testing ###
-
 print('\nTesting Tunnel - executing PING from VyOS to Fortigate:')
 print('~'*50)
 ping = net_connect.send_command('run ping 172.31.255.2 count 5')
