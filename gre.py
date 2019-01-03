@@ -30,8 +30,8 @@ def get_cookie(session):
     return cookie
 
 # MTU and MSS config (PPPoE)
-mtu = 1468
-mss = 1428
+mtu = 1460
+mss = 1420
 
 # Get user input for basic info
 
