@@ -1,4 +1,6 @@
 '''
+V4
+----------------------------------------------------------------------------------
 This script is used to configure GRE tunnel between Fortigate and VyOS.
 Using FortiOS API for Fortigate configuration and Netmiko for VyOS configuration.
 Tzakhi Malka
@@ -26,6 +28,10 @@ def get_cookie(session):
     for k, v in session.cookies.items():
         cookie[k] = v
     return cookie
+
+# MTU and MSS config (PPPoE)
+mtu = 1468
+mss = 1428
 
 # Get user input for basic info
 
@@ -133,8 +139,8 @@ api_url = 'https://'+forti_wan_ip+':'+forti_wan_port+'/api/v2/cmdb'
 # Modifying LAN interface MTU and TCP-MSS
 payload = {
       "mtu-override":"enable",
-      "mtu":1472,
-      "tcp-mss":1432}
+      "mtu":mtu,
+      "tcp-mss":mss}
 
 print('\nModifying LAN interface MTU and TCP-MSS\n')
 try:
@@ -177,8 +183,8 @@ payload = {
       "ip":"172.31.255.2 255.255.255.255",
       "allowaccess":"ping",
       "mtu-override":"enable",
-      "mtu":1472,
-      "tcp-mss":1432,
+      "mtu":mtu,
+      "tcp-mss":mss,
       "interface":"wan",
       "remote-ip":"172.31.255.1 255.255.255.255"}
 
@@ -192,7 +198,7 @@ except:
     exit()
 
 
-# Creating Route Policy
+# Creating Route Policy (Route all traffic through GRE except if destination is RFC1918)
 payload = {"seq-num":1,
       "src":[
         {
@@ -203,10 +209,19 @@ payload = {"seq-num":1,
       ],
       "src-negate":"disable",
       "dst":[
+        {
+          "subnet":"10.0.0.0/8"
+        },
+        {
+          "subnet":"172.16.0.0/12"
+        },
+        {
+          "subnet":"192.168.0.0/16",
+        }
       ],
       "dstaddr":[
       ],
-      "dst-negate":"disable",
+      "dst-negate":"enable",
       "action":"permit",
       "protocol":0,
       "start-port":1,
@@ -281,14 +296,14 @@ config_commands = [
 'set interfaces tunnel tun0 address 172.31.255.1/32',
 'set interfaces tunnel tun0 encapsulation gre',
 'set interfaces tunnel tun0 local-ip '+vyos_wan_ip,
-'set interfaces tunnel tun0 mtu 1472',
+'set interfaces tunnel tun0 mtu '+str(mtu),
 'set interfaces tunnel tun0 multicast disable',
 'set interfaces tunnel tun0 remote-ip '+forti_wan_ip,
 'set nat source rule 10 outbound-interface eth0',
 'set nat source rule 10 source address '+forti_ip_and_cidr,
 'set nat source rule 10 translation address masquerade',
 'set policy route MSS-CLAMP rule 10 protocol tcp',
-'set policy route MSS-CLAMP rule 10 set tcp-mss 1432',
+'set policy route MSS-CLAMP rule 10 set tcp-mss '+str(mss),
 'set policy route MSS-CLAMP rule 10 tcp flags SYN',
 'set protocols static interface-route '+forti_ip_and_cidr+' next-hop-interface tun0',
 'set protocols static interface-route 172.31.255.2/32 next-hop-interface tun0',
