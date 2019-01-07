@@ -185,7 +185,7 @@ payload = {
       "mtu-override":"enable",
       "mtu":mtu,
       "tcp-mss":mss,
-      "interface":"wan",
+      "interface": forti_interface,
       "remote-ip":"172.31.255.1 255.255.255.255"}
 
 
